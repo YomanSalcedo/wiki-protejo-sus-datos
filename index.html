@@ -1009,6 +1009,23 @@ function downloadWiki(){
   a.click();
 }
 
+
+// ===================== THEME TOGGLE =====================
+function toggleTheme(){
+  const isLight = document.body.classList.toggle('light');
+  document.getElementById('theme-icon').textContent  = isLight ? '🌙' : '☀️';
+  document.getElementById('theme-label').textContent = isLight ? 'Modo noche' : 'Modo día';
+  localStorage.setItem('theme', isLight ? 'light' : 'dark');
+}
+// Restore saved theme
+if(localStorage.getItem('theme') === 'light'){
+  document.body.classList.add('light');
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('theme-icon').textContent  = '🌙';
+    document.getElementById('theme-label').textContent = 'Modo noche';
+  });
+}
+
 // ===================== INIT =====================
 renderDashboard();
 renderPM();
