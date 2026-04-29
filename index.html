@@ -184,6 +184,43 @@ input[type=file]{display:none}
   .topbar{padding:16px 20px}
   .field-row{grid-template-columns:1fr}
 }
+
+/* ===== LIGHT MODE ===== */
+body.light {
+  --bg: #f8fafc; --bg2: #ffffff; --bg3: #f1f5f9;
+  --border: #e2e8f0; --border2: #cbd5e1;
+  --text: #0f172a; --muted: #64748b; --muted2: #475569;
+  --green: #059669; --blue: #2563eb; --red: #dc2626;
+  --amber: #d97706; --purple: #7c3aed;
+}
+body.light { background: var(--bg); color: var(--text); }
+body.light #sidebar { background: var(--bg2); border-color: var(--border); }
+body.light .metric-card, body.light .chart-card,
+body.light .task-card, body.light .pm-card,
+body.light .fin-card, body.light .fin-panel,
+body.light .fin-kpi, body.light .comp-card,
+body.light .profile-card, body.light .doc-content { background: var(--bg2); border-color: var(--border); }
+body.light .topbar { border-color: var(--border); background: var(--bg2); }
+body.light .nav-item { color: var(--muted2); }
+body.light .nav-item:hover, body.light .nav-item.active { background: rgba(5,150,105,.08); color: var(--green); }
+body.light .field-group input, body.light .field-group textarea,
+body.light .pm-select, body.light .add-skill-row input {
+  background: var(--bg3); border-color: var(--border2); color: var(--text);
+}
+body.light .progress-bar { background: rgba(0,0,0,.08); }
+body.light .info-box { background: #eff6ff; border-color: rgba(37,99,235,.3); }
+body.light .warn-box { background: #fff5f5; border-color: rgba(220,38,38,.3); }
+body.light .ok-box  { background: #f0fdf4; border-color: rgba(5,150,105,.3); }
+body.light .roles-table td { border-color: var(--border); color: var(--muted2); }
+body.light .fin-table th { background: var(--bg3); border-color: var(--border2); }
+body.light .fin-table td { border-color: var(--border2); }
+body.light .doc-nav-item { color: var(--muted2); }
+body.light .doc-nav-item:hover, body.light .doc-nav-item.active { background: rgba(5,150,105,.08); color: var(--green); }
+body.light .avatar-placeholder { background: var(--bg3); color: var(--muted); }
+body.light .skill-badge { background: rgba(37,99,235,.08); border-color: rgba(37,99,235,.2); color: #1d4ed8; }
+body.light .ptab { color: var(--muted2); border-color: var(--border2); }
+body.light .section { background: var(--bg); }
+
 </style>
 </head>
 <body>
@@ -215,6 +252,13 @@ input[type=file]{display:none}
       <span class="nav-text">Wiki Técnica</span>
     </button>
   </nav>
+  <div style="padding:16px 12px;border-top:1px solid var(--border)">
+    <button id="theme-btn" onclick="toggleTheme()"
+      style="width:100%;padding:9px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;transition:all .15s">
+      <span id="theme-icon">☀️</span>
+      <span id="theme-label" class="nav-text">Modo día</span>
+    </button>
+  </div>
 </div>
 
 <!-- MAIN -->
