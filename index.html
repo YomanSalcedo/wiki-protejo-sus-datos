@@ -631,18 +631,63 @@ function updateStatus(id,val){
 }
 
 // ===================== PERFILES =====================
+// Colores disponibles para nuevos perfiles
+const PALETTE = [
+  {color:'#3b82f6',bg:'rgba(59,130,246,.1)',border:'rgba(59,130,246,.3)'},
+  {color:'#10b981',bg:'rgba(16,185,129,.1)',border:'rgba(16,185,129,.3)'},
+  {color:'#ef4444',bg:'rgba(239,68,68,.1)',border:'rgba(239,68,68,.3)'},
+  {color:'#f59e0b',bg:'rgba(245,158,11,.1)',border:'rgba(245,158,11,.3)'},
+  {color:'#8b5cf6',bg:'rgba(139,92,246,.1)',border:'rgba(139,92,246,.3)'},
+  {color:'#ec4899',bg:'rgba(236,72,153,.1)',border:'rgba(236,72,153,.3)'},
+];
+
+function newProfileTemplate(n){
+  const p = PALETTE[n % PALETTE.length];
+  return {
+    id: 'analista-' + Date.now(),
+    role: 'Analista ' + (profileState.length + 1),
+    titulo: '', nombre: '', email: '', linkedin: '',
+    bio: '', herramientas: '', skills: [], photo: null,
+    ...p
+  };
+}
+
+function createProfile(){
+  profileState.push(newProfileTemplate(profileState.length));
+  renderProfiles();
+  switchProfile(profileState.length - 1);
+}
+
+async function deleteProfile(i){
+  if(!confirm('¿Eliminar este perfil permanentemente?')) return;
+  const id = profileState[i].id;
+  profileState.splice(i, 1);
+  // Borrar de Supabase
+  await fetch(`${SB_URL}/rest/v1/perfiles?id=eq.${id}`, {
+    method: 'DELETE',
+    headers: SB_HDRS
+  });
+  renderProfiles();
+  switchProfile(Math.max(0, i - 1));
+}
+
 function renderProfiles(){
-  const tabs = document.getElementById('profiles-tabs');
+  const tabs  = document.getElementById('profiles-tabs');
   const cards = document.getElementById('profiles-cards');
-  tabs.innerHTML = analysts.map((a,i)=>`
-    <button class="ptab${i===0?' active':''}" onclick="switchProfile(${i})">${a.role}</button>`).join('');
+
+  // Tabs + botón crear
+  tabs.innerHTML = profileState.map((a,i)=>`
+    <button class="ptab${i===0?' active':''}" onclick="switchProfile(${i})">${a.role}</button>`).join('')
+    + `<button class="ptab" onclick="createProfile()"
+        style="border-color:rgba(16,185,129,.35);color:var(--green)">+ Nuevo</button>`;
+
   cards.innerHTML = profileState.map((s,i)=>`
     <div class="profile-card${i===0?' active':''}" id="pcard-${i}">
       <div class="profile-top">
         <div class="avatar-zone">
           ${s.photo
             ?`<img class="avatar-img" src="${s.photo}" alt="foto">`
-            :`<div class="avatar-placeholder" onclick="document.getElementById('pfile-${i}').click()">${s.role.slice(-1)}</div>`}
+            :`<div class="avatar-placeholder" onclick="document.getElementById('pfile-${i}').click()">${(s.role||'A').slice(-1)}</div>`}
           <div class="avatar-btn-group">
             <button class="avatar-btn" onclick="document.getElementById('pfile-${i}').click()">+ Subir foto</button>
             ${s.photo?`<button class="avatar-btn del" onclick="removePhoto(${i})">Quitar</button>`:''}
@@ -650,25 +695,37 @@ function renderProfiles(){
           <input type="file" id="pfile-${i}" accept="image/*" onchange="uploadPhoto(${i},this)">
         </div>
         <div class="profile-fields">
-          <span class="role-badge" style="background:${s.bg};color:${s.color};border-color:${s.border}">${s.role}</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="role-badge" style="background:${s.bg};color:${s.color};border-color:${s.border}">${s.role}</span>
+            <button onclick="deleteProfile(${i})"
+              style="font-size:11px;padding:4px 12px;border-radius:8px;border:1px solid #991b1b;background:rgba(153,27,27,.1);color:#f87171;cursor:pointer;font-family:'DM Sans',sans-serif">
+              Eliminar perfil
+            </button>
+          </div>
           <div class="field-row">
+            <div class="field-group">
+              <label>Rol / etiqueta</label>
+              <input placeholder="Analista N..." value="${s.role}" oninput="updateField(${i},'role',this.value)">
+            </div>
             <div class="field-group">
               <label>Nombre completo</label>
               <input placeholder="Tu nombre..." value="${s.nombre}" oninput="updateField(${i},'nombre',this.value)">
             </div>
+          </div>
+          <div class="field-row">
             <div class="field-group">
               <label>Email profesional</label>
               <input type="email" placeholder="correo@empresa.com" value="${s.email}" oninput="updateField(${i},'email',this.value)">
+            </div>
+            <div class="field-group">
+              <label>LinkedIn URL</label>
+              <input placeholder="linkedin.com/in/tu-perfil" value="${s.linkedin}" oninput="updateField(${i},'linkedin',this.value)">
             </div>
           </div>
           <div class="field-row">
             <div class="field-group">
               <label>Título / cargo</label>
               <input value="${s.titulo}" oninput="updateField(${i},'titulo',this.value)">
-            </div>
-            <div class="field-group">
-              <label>LinkedIn URL</label>
-              <input placeholder="linkedin.com/in/tu-perfil" value="${s.linkedin}" oninput="updateField(${i},'linkedin',this.value)">
             </div>
           </div>
         </div>
@@ -736,10 +793,58 @@ function removeSk(i,si){
   renderProfiles(); switchProfile(i);
 }
 
-function saveProfile(i){
-  const msg=document.getElementById('saved-'+i);
-  msg.textContent='// perfil guardado correctamente';
-  setTimeout(()=>msg.textContent='',3000);
+// ===================== SUPABASE =====================
+const SB_URL  = 'https://mzwqncjtwywtpmrynwvo.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im16d3FuY2p0d3l3dHBtcnlud3ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc0MTY1MDUsImV4cCI6MjA5Mjk5MjUwNX0.lXWygcaxRddk7B-IUO8s94hCfQXAgcyDOZ7TQQilsuk';
+const SB_HDRS = { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+
+async function sbGet(table){
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?select=*`, { headers: SB_HDRS });
+  return r.json();
+}
+
+async function sbUpsert(table, data){
+  const r = await fetch(`${SB_URL}/rest/v1/${table}`, {
+    method: 'POST',
+    headers: { ...SB_HDRS, 'Prefer': 'resolution=merge-duplicates' },
+    body: JSON.stringify(data)
+  });
+  return r.ok;
+}
+
+async function loadProfiles(){
+  try {
+    const rows = await sbGet('perfiles');
+    if(!Array.isArray(rows)) return;
+    rows.forEach(row => {
+      const idx = profileState.findIndex(p => p.id === row.id);
+      if(idx === -1) return;
+      Object.assign(profileState[idx], row, {
+        skills: Array.isArray(row.skills) ? row.skills : profileState[idx].skills
+      });
+    });
+    renderProfiles();
+  } catch(e) { console.warn('Supabase load error:', e); }
+}
+
+async function saveProfile(i){
+  const msg = document.getElementById('saved-'+i);
+  const p   = profileState[i];
+  msg.textContent = '// guardando...';
+  const ok = await sbUpsert('perfiles', {
+    id:           p.id,
+    nombre:       p.nombre,
+    email:        p.email,
+    linkedin:     p.linkedin,
+    titulo:       p.titulo,
+    bio:          p.bio,
+    herramientas: p.herramientas,
+    skills:       p.skills,
+    photo:        p.photo,
+    updated_at:   new Date().toISOString()
+  });
+  msg.textContent = ok ? '// perfil guardado en Supabase ✓' : '// error al guardar';
+  setTimeout(() => msg.textContent = '', 3500);
 }
 
 // ===================== WIKI DOCS =====================
@@ -801,6 +906,7 @@ renderDashboard();
 renderPM();
 renderProfiles();
 renderFinCharts();
+loadProfiles();
 </script>
 </body>
 </html>
