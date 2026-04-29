@@ -393,6 +393,29 @@ input[type=file]{display:none}
         <h1>Documentación del Proyecto</h1>
         <p>Arquitectura, roles, decisiones técnicas y referencias del equipo.</p>
       </div>
+
+      <!-- WIKI TOOLBAR -->
+      <div class="wiki-toolbar" style="display:flex;gap:10px;margin-bottom:20px;align-items:center;flex-wrap:wrap">
+        <button onclick="toggleEditMode()" id="btn-edit"
+          style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s"
+          onmouseover="this.style.borderColor='var(--amber)';this.style.color='var(--amber)'"
+          onmouseout="if(!editMode)this.style.borderColor='var(--border2)',this.style.color='var(--muted2)'">
+          ✏️ <span id="edit-label">Editar</span>
+        </button>
+        <button onclick="printWiki()"
+          style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s"
+          onmouseover="this.style.borderColor='var(--blue)';this.style.color='var(--blue)'"
+          onmouseout="this.style.borderColor='var(--border2)',this.style.color='var(--muted2)'">
+          🖨️ Imprimir
+        </button>
+        <button onclick="downloadWiki()"
+          style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s"
+          onmouseover="this.style.borderColor='var(--green)';this.style.color='var(--green)'"
+          onmouseout="this.style.borderColor='var(--border2)',this.style.color='var(--muted2)'">
+          ⬇️ Descargar
+        </button>
+        <span id="edit-status" style="font-size:11px;color:var(--green);font-family:'Space Mono',monospace;margin-left:4px"></span>
+      </div>
       <div class="doc-grid">
         <div class="doc-nav">
           <button class="doc-nav-item active" onclick="showDoc('arquitectura')">Arquitectura</button>
@@ -899,6 +922,91 @@ function renderFinCharts(){
       }
     }
   });
+}
+
+
+// ===================== WIKI EDIT / PRINT / DOWNLOAD =====================
+let editMode = false;
+
+function toggleEditMode(){
+  editMode = !editMode;
+  const btn   = document.getElementById('btn-edit');
+  const label = document.getElementById('edit-label');
+  const status= document.getElementById('edit-status');
+  const sections = document.querySelectorAll('.doc-section h2, .doc-section h3, .doc-section p, .doc-section li');
+
+  if(editMode){
+    sections.forEach(el => {
+      el.contentEditable = 'true';
+      el.style.outline = '1px dashed rgba(245,158,11,.4)';
+      el.style.borderRadius = '4px';
+      el.style.padding = '2px 4px';
+    });
+    btn.style.borderColor = 'var(--amber)';
+    btn.style.color = 'var(--amber)';
+    btn.style.background = 'rgba(245,158,11,.08)';
+    label.textContent = 'Guardar';
+    status.textContent = '// modo edición activo';
+  } else {
+    sections.forEach(el => {
+      el.contentEditable = 'false';
+      el.style.outline = '';
+      el.style.padding = '';
+    });
+    btn.style.borderColor = 'var(--border2)';
+    btn.style.color = 'var(--muted2)';
+    btn.style.background = 'transparent';
+    label.textContent = 'Editar';
+    status.textContent = '// cambios guardados localmente';
+    setTimeout(() => status.textContent = '', 3000);
+  }
+}
+
+function printWiki(){
+  // Show all doc sections temporarily for print
+  document.querySelectorAll('.doc-section').forEach(s => s.style.display = 'block');
+  window.print();
+  // Restore — only active one visible
+  setTimeout(() => {
+    document.querySelectorAll('.doc-section').forEach(s => s.style.display = 'none');
+    const active = document.querySelector('.doc-nav-item.active');
+    if(active) active.click();
+    else document.querySelector('.doc-section').style.display = 'block';
+  }, 500);
+}
+
+function downloadWiki(){
+  // Build clean HTML with all doc sections
+  const title = 'Wiki Técnica — Protejo sus Datos';
+  const css = `
+    body{font-family:Georgia,serif;max-width:860px;margin:40px auto;padding:0 24px;color:#1e293b;line-height:1.7}
+    h1{font-size:32px;border-bottom:2px solid #1e293b;padding-bottom:12px;margin-bottom:8px}
+    h2{font-size:22px;margin-top:40px;color:#1e2761;border-bottom:1px solid #e2e8f0;padding-bottom:6px}
+    h3{font-size:16px;color:#334155;margin-top:24px}
+    p,li{font-size:14px;color:#475569}
+    .info-box{background:#eff6ff;border-left:4px solid #3b82f6;padding:12px 16px;border-radius:4px;margin:16px 0}
+    .warn-box{background:#fff5f5;border-left:4px solid #ef4444;padding:12px 16px;border-radius:4px;margin:16px 0}
+    .ok-box{background:#f0fdf4;border-left:4px solid #10b981;padding:12px 16px;border-radius:4px;margin:16px 0}
+    table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+    th{background:#1e2761;color:white;padding:10px 12px;text-align:left}
+    td{padding:10px 12px;border-bottom:1px solid #e2e8f0;color:#475569}
+    .section-break{page-break-before:always;border-top:2px solid #e2e8f0;margin-top:48px;padding-top:32px}
+    footer{margin-top:60px;padding-top:16px;border-top:1px solid #e2e8f0;font-size:12px;color:#94a3b8;text-align:center}
+  `;
+
+  const sections = document.querySelectorAll('.doc-section');
+  let body = `<h1>${title}</h1><p style="color:#94a3b8;font-size:13px">Generado el ${new Date().toLocaleDateString('es-CO', {year:'numeric',month:'long',day:'numeric'})}</p>`;
+  sections.forEach((s, i) => {
+    body += (i > 0 ? '<div class="section-break">' : '<div>') + s.innerHTML + '</div>';
+  });
+  body += `<footer>Protejo sus Datos S.A.S. · Wiki Técnica Interna · ${new Date().getFullYear()}</footer>`;
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>${title}</title><style>${css}</style></head><body>${body}</body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'wiki-tecnica-protejo-sus-datos.html';
+  a.click();
 }
 
 // ===================== INIT =====================
