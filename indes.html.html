@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiki Interna — Protejo sus Datos</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #030712;
+  --bg2: #0f172a;
+  --bg3: #1e293b;
+  --border: #1e293b;
+  --border2: #334155;
+  --text: #f1f5f9;
+  --muted: #64748b;
+  --muted2: #94a3b8;
+  --green: #10b981;
+  --green2: #059669;
+  --blue: #3b82f6;
+  --red: #ef4444;
+  --amber: #f59e0b;
+  --purple: #8b5cf6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+code,pre,.mono{font-family:'Space Mono',monospace}
+
+/* SIDEBAR */
+#sidebar{
+  position:fixed;top:0;left:0;width:220px;height:100vh;
+  background:var(--bg2);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:100;overflow-y:auto
+}
+.sidebar-logo{padding:24px 20px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo span{font-family:'Space Mono',monospace;font-size:11px;color:var(--green);letter-spacing:.15em;text-transform:uppercase}
+.sidebar-logo h2{font-size:14px;font-weight:700;color:var(--text);margin-top:4px;line-height:1.3}
+nav{padding:16px 12px;flex:1}
+.nav-section{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-family:'Space Mono',monospace;padding:8px 8px 4px}
+.nav-item{display:block;padding:8px 10px;border-radius:8px;color:var(--muted2);font-size:13px;font-weight:500;text-decoration:none;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover,.nav-item.active{background:rgba(16,185,129,.1);color:var(--green)}
+.nav-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;vertical-align:middle}
+
+/* MAIN */
+#main{margin-left:220px;min-height:100vh}
+.section{display:none;min-height:100vh}
+.section.active{display:block}
+
+/* TOP BAR */
+.topbar{padding:20px 40px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.topbar-title{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.12em;font-family:'Space Mono',monospace}
+.live-badge{display:flex;align-items:center;gap:8px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:20px;padding:5px 14px;font-size:11px;font-family:'Space Mono',monospace;color:var(--green);font-weight:700;letter-spacing:.08em}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.5s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* CONTENT PADDING */
+.content{padding:40px}
+
+/* DASHBOARD */
+.dash-header{margin-bottom:40px}
+.dash-header h1{font-size:42px;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.1}
+.dash-header p{color:var(--muted2);margin-top:8px;font-size:15px}
+.dash-header .tag{display:inline-block;font-size:11px;color:var(--green);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px}
+
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px 24px}
+.metric-card .label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-family:'Space Mono',monospace;margin-bottom:8px}
+.metric-card .value{font-size:32px;font-weight:700;font-family:'Space Mono',monospace}
+.metric-card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.c-green{color:var(--green)}.c-blue{color:var(--blue)}.c-amber{color:var(--amber)}.c-red{color:var(--red)}
+
+.dash-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:24px;align-items:start}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:28px;position:relative}
+.chart-wrap{position:relative;height:280px;display:flex;align-items:center;justify-content:center}
+.chart-center{position:absolute;text-align:center;pointer-events:none}
+.chart-center .big{font-size:36px;font-weight:700;font-family:'Space Mono',monospace;color:var(--text)}
+.chart-center .sm{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted2)}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+.tasks-list{display:flex;flex-direction:column;gap:12px}
+.task-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:20px 24px;border-left:3px solid transparent;transition:border-color .2s}
+.task-card:hover{border-color:rgba(16,185,129,.3)}
+.task-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.task-analista{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em}
+.task-status{font-size:10px;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:.08em;font-family:'Space Mono',monospace}
+.task-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:14px}
+.progress-bar-wrap{display:flex;align-items:center;gap:10px}
+.progress-bar{flex:1;height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.progress-pct{font-size:11px;font-family:'Space Mono',monospace;color:var(--muted2);width:32px;text-align:right}
+
+/* PM PANEL */
+.pm-grid{display:flex;flex-direction:column;gap:16px}
+.pm-card{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:24px;display:flex;align-items:center;justify-content:space-between;gap:24px;transition:border-color .2s}
+.pm-card:hover{border-color:var(--border2)}
+.pm-info{flex:1}
+.pm-analista{font-size:10px;color:var(--green);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.pm-title{font-size:16px;font-weight:600;color:var(--text)}
+.pm-controls{display:flex;align-items:center;gap:16px}
+.pm-range{display:flex;align-items:center;gap:10px}
+.pm-range input[type=range]{width:140px;accent-color:var(--green)}
+.pm-range span{font-family:'Space Mono',monospace;font-size:12px;color:var(--muted2);width:36px;text-align:right}
+.pm-select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 14px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;outline:none}
+.pm-select:focus{border-color:var(--green)}
+
+/* PERFILES */
+.profiles-tabs{display:flex;gap:8px;margin-bottom:28px;flex-wrap:wrap}
+.ptab{padding:8px 18px;border-radius:20px;border:1px solid var(--border2);background:transparent;color:var(--muted2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.ptab.active{background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.35);color:var(--green)}
+.profile-card{display:none;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:32px}
+.profile-card.active{display:block}
+.profile-top{display:flex;gap:24px;align-items:flex-start;margin-bottom:28px}
+.avatar-zone{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.avatar-img{width:96px;height:96px;border-radius:50%;object-fit:cover;border:2px solid var(--border2)}
+.avatar-placeholder{width:96px;height:96px;border-radius:50%;background:var(--bg3);border:2px dashed var(--border2);display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:var(--muted);cursor:pointer;font-family:'Space Mono',monospace}
+.avatar-btn-group{display:flex;flex-direction:column;gap:5px;width:96px}
+.avatar-btn{font-size:11px;padding:5px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;text-align:center;transition:all .15s;font-family:'DM Sans',sans-serif}
+.avatar-btn:hover{border-color:var(--green);color:var(--green)}
+.avatar-btn.del{color:#f87171;border-color:#991b1b}
+.avatar-btn.del:hover{background:#991b1b22}
+input[type=file]{display:none}
+.profile-fields{flex:1;min-width:0}
+.role-badge{display:inline-block;font-size:10px;font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.12em;padding:4px 12px;border-radius:20px;margin-bottom:14px;border:1px solid}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.field-row.full{grid-template-columns:1fr}
+.field-group label{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-family:'Space Mono',monospace;margin-bottom:5px}
+.field-group input,.field-group textarea{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;resize:vertical}
+.field-group input:focus,.field-group textarea:focus{border-color:var(--green)}
+.field-group textarea{min-height:80px;line-height:1.5}
+.profile-divider{border:none;border-top:1px solid var(--border);margin:20px 0}
+.skills-section h4{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-family:'Space Mono',monospace;margin-bottom:10px}
+.badges-wrap{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.skill-badge{display:flex;align-items:center;gap:5px;font-size:12px;padding:4px 12px;border-radius:20px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#93c5fd}
+.skill-del{cursor:pointer;opacity:.6;font-size:14px;line-height:1}
+.skill-del:hover{opacity:1;color:#f87171}
+.add-skill-row{display:flex;gap:8px}
+.add-skill-row input{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:7px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none}
+.add-skill-row input:focus{border-color:var(--green)}
+.add-skill-row button{padding:7px 16px;border-radius:8px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-size:18px;line-height:1;transition:all .15s}
+.add-skill-row button:hover{border-color:var(--green);color:var(--green)}
+.save-profile-btn{width:100%;margin-top:20px;padding:11px;border-radius:10px;border:1px solid rgba(16,185,129,.35);background:rgba(16,185,129,.08);color:var(--green);font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s}
+.save-profile-btn:hover{background:rgba(16,185,129,.15)}
+.saved-msg{text-align:center;font-size:12px;color:var(--green);margin-top:8px;min-height:18px;font-family:'Space Mono',monospace}
+
+/* WIKI / DOCS */
+.doc-grid{display:grid;grid-template-columns:200px 1fr;gap:32px;align-items:start}
+.doc-nav{position:sticky;top:20px}
+.doc-nav-item{display:block;padding:7px 12px;border-radius:8px;color:var(--muted2);font-size:13px;cursor:pointer;transition:all .15s;border:none;background:none;text-align:left;width:100%}
+.doc-nav-item:hover,.doc-nav-item.active{color:var(--green);background:rgba(16,185,129,.08)}
+.doc-content h2{font-size:26px;font-weight:700;color:var(--text);margin-bottom:8px;margin-top:32px}
+.doc-content h2:first-child{margin-top:0}
+.doc-content h3{font-size:16px;font-weight:600;color:var(--muted2);margin-bottom:12px;margin-top:24px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.doc-content p{font-size:14px;color:var(--muted2);line-height:1.75;margin-bottom:12px}
+.doc-content ul{padding-left:20px;margin-bottom:14px}
+.doc-content li{font-size:14px;color:var(--muted2);line-height:1.75;margin-bottom:4px}
+.doc-content strong{color:var(--text);font-weight:600}
+.info-box{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:12px;padding:16px 20px;margin:16px 0}
+.warn-box{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:16px 20px;margin:16px 0}
+.ok-box{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:16px 20px;margin:16px 0}
+.info-box p,.warn-box p,.ok-box p{margin:0;font-size:13px}
+.roles-table{width:100%;border-collapse:collapse;margin:16px 0;font-size:13px}
+.roles-table th{text-align:left;padding:10px 14px;border-bottom:1px solid var(--border2);color:var(--muted);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.08em;font-family:'Space Mono',monospace}
+.roles-table td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--muted2);vertical-align:top}
+.roles-table tr:last-child td{border-bottom:none}
+.roles-table td:first-child{color:var(--text);font-weight:500}
+
+/* SECTION HEADERS */
+.section-header{padding:28px 40px 0;margin-bottom:0}
+.section-header h1{font-size:28px;font-weight:700;color:var(--text)}
+.section-header p{color:var(--muted);font-size:14px;margin-top:4px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  #sidebar{width:64px}
+  .sidebar-logo h2,.sidebar-logo span,.nav-section,.nav-text{display:none}
+  #main{margin-left:64px}
+  .metrics{grid-template-columns:1fr 1fr}
+  .dash-grid{grid-template-columns:1fr}
+  .content{padding:20px}
+  .topbar{padding:16px 20px}
+  .field-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="sidebar-logo">
+    <span>INTERNO</span>
+    <h2>Protejo<br>sus Datos</h2>
+  </div>
+  <nav>
+    <div class="nav-section">Dashboard</div>
+    <button class="nav-item active" onclick="show('dashboard')">
+      <span class="nav-dot" style="background:var(--green)"></span>
+      <span class="nav-text">Vista Junta</span>
+    </button>
+    <button class="nav-item" onclick="show('pm')">
+      <span class="nav-dot" style="background:var(--blue)"></span>
+      <span class="nav-text">Control PM</span>
+    </button>
+    <div class="nav-section" style="margin-top:16px">Equipo</div>
+    <button class="nav-item" onclick="show('perfiles')">
+      <span class="nav-dot" style="background:var(--purple)"></span>
+      <span class="nav-text">Perfiles</span>
+    </button>
+    <div class="nav-section" style="margin-top:16px">Docs</div>
+    <button class="nav-item" onclick="show('wiki')">
+      <span class="nav-dot" style="background:var(--amber)"></span>
+      <span class="nav-text">Wiki Técnica</span>
+    </button>
+  </nav>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- ===== DASHBOARD JUNTA ===== -->
+  <div id="s-dashboard" class="section active">
+    <div class="topbar">
+      <span class="topbar-title">Status Report Global</span>
+      <div class="live-badge"><div class="live-dot"></div>LIVE SYNC</div>
+    </div>
+    <div class="content">
+      <div class="dash-header">
+        <div class="tag">Proyecto Infraestructura TI 2025</div>
+        <h1>Protejo sus Datos</h1>
+        <p>Panel ejecutivo de seguimiento de entregables y progreso del equipo.</p>
+      </div>
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="label">Total fases</div>
+          <div class="value c-green" id="m-total">5</div>
+          <div class="sub">entregables</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Completadas</div>
+          <div class="value c-green" id="m-done">0</div>
+          <div class="sub">al 100%</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">En progreso</div>
+          <div class="value c-blue" id="m-progress">0</div>
+          <div class="sub">activas</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Bloqueadas</div>
+          <div class="value c-red" id="m-blocked">0</div>
+          <div class="sub">requieren atención</div>
+        </div>
+      </div>
+      <div class="dash-grid">
+        <div class="chart-card">
+          <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px">Distribución de estados</div>
+          <div class="chart-wrap">
+            <canvas id="pieChart"></canvas>
+            <div class="chart-center">
+              <div class="big" id="pie-total">5</div>
+              <div class="sm">Fases</div>
+            </div>
+          </div>
+          <div class="chart-legend" id="chart-legend"></div>
+        </div>
+        <div class="tasks-list" id="tasks-list"></div>
+      </div>
+
+      <!-- ===== PROPUESTA FINANCIERA EN DASHBOARD ===== -->
+      <div style="margin-top:32px">
+        <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)">Propuesta financiera — TCO 3 años</div>
+
+        <!-- KPIs financieros -->
+        <div class="metrics" style="margin-bottom:24px">
+          <div class="metric-card" style="border-top:2px solid var(--blue)">
+            <div class="label">Inversión inicial</div>
+            <div class="value c-blue">$47.5M</div>
+            <div class="sub">hardware + licencias + gestión</div>
+          </div>
+          <div class="metric-card" style="border-top:2px solid var(--green)">
+            <div class="label">Costo operativo / año</div>
+            <div class="value c-green">$14.4M</div>
+            <div class="sub">AWS · soporte · capacitación</div>
+          </div>
+          <div class="metric-card" style="border-top:2px solid var(--purple)">
+            <div class="label">TCO a 3 años</div>
+            <div class="value" style="color:var(--purple)">$90.7M</div>
+            <div class="sub">inversión + operación acumulada</div>
+          </div>
+          <div class="metric-card" style="border-top:2px solid var(--amber);position:relative;overflow:hidden">
+            <div class="label">Ahorro neto estimado</div>
+            <div class="value c-amber">$122.8M</div>
+            <div class="sub">vs. escenario sin inversión</div>
+            <div style="position:absolute;bottom:8px;right:12px;font-size:9px;color:var(--amber);font-family:'Space Mono',monospace;opacity:.6">vs P2P + incidente</div>
+          </div>
+        </div>
+
+        <!-- Gráficas financieras: Donut + Barras + Riesgo -->
+        <div style="display:grid;grid-template-columns:1fr 1.5fr 0.9fr;gap:20px">
+
+          <!-- Donut distribución inversión -->
+          <div class="chart-card" style="padding:24px">
+            <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px">Distribución inversión</div>
+            <div style="position:relative;height:200px;display:flex;align-items:center;justify-content:center">
+              <canvas id="tcoChart"></canvas>
+              <div style="position:absolute;text-align:center;pointer-events:none">
+                <div style="font-size:20px;font-weight:700;font-family:'Space Mono',monospace;color:var(--text)">$47.5M</div>
+                <div style="font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px">COP</div>
+              </div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:7px;margin-top:14px" id="tco-legend"></div>
+          </div>
+
+          <!-- Barras comparativa P2P vs C-S -->
+          <div class="chart-card" style="padding:24px">
+            <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:16px">P2P vs. Cliente-Servidor (COP millones)</div>
+            <canvas id="compChart" style="max-height:230px"></canvas>
+          </div>
+
+          <!-- Panel riesgo -->
+          <div class="chart-card" style="padding:24px">
+            <div style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Análisis de riesgo</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="padding:12px;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:10px">
+                <div style="font-size:9px;color:var(--red);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Sin inversión (P2P)</div>
+                <div style="font-size:24px;font-weight:700;font-family:'Space Mono',monospace;color:var(--red)">65%</div>
+                <div style="font-size:11px;color:var(--muted2)">prob. incidente / año</div>
+              </div>
+              <div style="padding:12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:10px">
+                <div style="font-size:9px;color:var(--green);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Con inversión (C-S)</div>
+                <div style="font-size:24px;font-weight:700;font-family:'Space Mono',monospace;color:var(--green)">5%</div>
+                <div style="font-size:11px;color:var(--muted2)">prob. incidente / año</div>
+              </div>
+              <div style="padding:12px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:10px">
+                <div style="font-size:9px;color:var(--amber);font-family:'Space Mono',monospace;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Costo estimado incidente</div>
+                <div style="font-size:24px;font-weight:700;font-family:'Space Mono',monospace;color:var(--amber)">$210M+</div>
+                <div style="font-size:11px;color:var(--muted2)">Ley 1581 COP</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- ===== FIN PROPUESTA FINANCIERA ===== -->
+
+    </div>
+  </div>
+
+  <!-- ===== CONTROL PM ===== -->
+  <div id="s-pm" class="section">
+    <div class="topbar">
+      <span class="topbar-title">OP_CENTER: Control PM</span>
+      <div class="live-badge" style="background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.2);color:var(--blue)">
+        <div class="live-dot" style="background:var(--blue)"></div>GESTIÓN ACTIVA
+      </div>
+    </div>
+    <div class="content">
+      <div class="dash-header">
+        <div class="tag" style="color:var(--blue)">Project Manager</div>
+        <h1>Control de Entregables</h1>
+        <p>Actualiza el estado y progreso de cada fase del proyecto en tiempo real.</p>
+      </div>
+      <div class="pm-grid" id="pm-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== PERFILES ===== -->
+  <div id="s-perfiles" class="section">
+    <div class="topbar">
+      <span class="topbar-title">Equipo de Analistas</span>
+    </div>
+    <div class="content">
+      <div class="dash-header">
+        <div class="tag" style="color:var(--purple)">Equipo</div>
+        <h1>Perfiles del Equipo</h1>
+        <p>Cada analista puede editar su perfil, subir su foto y actualizar su información profesional.</p>
+      </div>
+      <div class="profiles-tabs" id="profiles-tabs"></div>
+      <div id="profiles-cards"></div>
+    </div>
+  </div>
+
+  <!-- ===== WIKI ===== -->
+  <div id="s-wiki" class="section">
+    <div class="topbar">
+      <span class="topbar-title">Documentación Técnica</span>
+    </div>
+    <div class="content">
+      <div class="dash-header">
+        <div class="tag" style="color:var(--amber)">Wiki Interna</div>
+        <h1>Documentación del Proyecto</h1>
+        <p>Arquitectura, roles, decisiones técnicas y referencias del equipo.</p>
+      </div>
+      <div class="doc-grid">
+        <div class="doc-nav">
+          <button class="doc-nav-item active" onclick="showDoc('arquitectura')">Arquitectura</button>
+          <button class="doc-nav-item" onclick="showDoc('roles')">Roles</button>
+          <button class="doc-nav-item" onclick="showDoc('seguridad')">Seguridad</button>
+          <button class="doc-nav-item" onclick="showDoc('cloud')">Cloud AWS</button>
+          <button class="doc-nav-item" onclick="showDoc('referencias')">Referencias</button>
+        </div>
+        <div class="doc-content">
+
+          <div id="doc-arquitectura" class="doc-section">
+            <h2>Arquitectura de Red</h2>
+            <p>La red implementada sigue un modelo <strong>Cliente-Servidor jerárquico y segmentado</strong>, reemplazando la propuesta inicial de red plana (Peer-to-Peer) con switch no administrable.</p>
+            <div class="info-box"><p><strong>Principio rector:</strong> ningún equipo accede a la consola de AWS a través del internet público. Todo tráfico cloud pasa por el túnel VPN IPSec Site-to-Site gestionado por el Edge Gateway.</p></div>
+            <h3>Componentes principales</h3>
+            <ul>
+              <li><strong>Edge Gateway (Firewall Perimetral UTM):</strong> controla acceso a internet y establece el túnel VPN hacia AWS.</li>
+              <li><strong>Switch Administrable Capa 3:</strong> segmenta la red en VLANs aisladas.</li>
+              <li><strong>VLAN 10 — Administrativos:</strong> acceso filtrado a internet y herramientas ofimáticas.</li>
+              <li><strong>VLAN 20 — Ingenieros:</strong> tráfico priorizado y altamente restrictivo, acceso a VPN AWS.</li>
+              <li><strong>VLAN 30 — Servidores:</strong> controlador de dominio, DNS y DHCP internos.</li>
+              <li><strong>Servidor Local (DC):</strong> Windows Server 2022 o Ubuntu Server con Samba/FreeIPA.</li>
+            </ul>
+            <h3>Por qué se descartó la red plana</h3>
+            <div class="warn-box"><p><strong>Riesgo crítico:</strong> en una red plana sin segmentación, el compromiso de un equipo administrativo daría visibilidad directa sobre los ingenieros y las credenciales de AWS. El movimiento lateral sería irrestricto.</p></div>
+            <p>La propuesta inicial (switch básico + salida a internet directa) es técnicamente inviable para una empresa cuyo producto principal es la confidencialidad de datos de clientes.</p>
+          </div>
+
+          <div id="doc-roles" class="doc-section" style="display:none">
+            <h2>Roles del Equipo</h2>
+            <p>El proyecto se divide en 5 roles especializados, cada uno con responsabilidades y entregables claros:</p>
+            <table class="roles-table">
+              <thead><tr><th>Analista</th><th>Rol</th><th>Entregable clave</th><th>Desafío crítico</th></tr></thead>
+              <tbody>
+                <tr><td>Analista 1</td><td>Arquitecto de Infraestructura y Redes</td><td>Red segmentada + VPN Site-to-Site operativa</td><td>Aislamiento perfecto de tráfico entre VLANs</td></tr>
+                <tr><td>Analista 2</td><td>Administrador de Sistemas y Gestión de Identidades</td><td>Directorio centralizado + estaciones en dominio</td><td>Centralizar control sin cuellos de botella</td></tr>
+                <tr><td>Analista 3</td><td>Especialista en Ciberseguridad</td><td>Matriz de accesos + informe de auditoría</td><td>Cifrado total e inviolabilidad de puestos</td></tr>
+                <tr><td>Analista 4</td><td>Ingeniero de Integración Cloud (AWS)</td><td>Entorno AWS securizado con IAM aplicado</td><td>Políticas IAM para acceso remoto seguro</td></tr>
+                <tr><td>Analista 5</td><td>Gestor de Proyectos de TI (PM)</td><td>Cronograma ejecutado + presupuesto conciliado</td><td>Demostrar ROI de la inversión extra a directivos</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="doc-seguridad" class="doc-section" style="display:none">
+            <h2>Seguridad y Hardening</h2>
+            <p>El enfoque de seguridad cubre tres capas: identidades, endpoints y red.</p>
+            <h3>Gestión de identidades</h3>
+            <ul>
+              <li>Active Directory / LDAP como directorio centralizado único.</li>
+              <li>Autenticación Multifactor (MFA) obligatoria para todos los usuarios.</li>
+              <li>Políticas de contraseña robustas aplicadas vía GPO.</li>
+              <li>Separación estricta: administradores de dominio no tienen claves de AWS.</li>
+            </ul>
+            <h3>Hardening de endpoints</h3>
+            <ul>
+              <li>Cifrado de disco completo: <strong>BitLocker</strong> (Windows) y <strong>LUKS</strong> (Linux) en todos los equipos.</li>
+              <li>Bloqueo de puertos USB (prevención de fuga de datos — DLP).</li>
+              <li>GPOs que restringen permisos por perfil de usuario.</li>
+              <li>Prohibición de instalación de software no autorizado en puestos administrativos.</li>
+            </ul>
+            <h3>Seguridad de red</h3>
+            <ul>
+              <li>Firewall UTM perimetral con inspección de paquetes.</li>
+              <li>Segmentación VLAN impide movimiento lateral entre departamentos.</li>
+              <li>VPN IPSec cifrada para todo acceso a AWS.</li>
+              <li>Auditoría centralizada: logs de acceso para cumplimiento y trazabilidad.</li>
+            </ul>
+            <div class="ok-box"><p>Estas medidas garantizan los principios de <strong>confidencialidad, integridad y no repudio</strong> exigidos por el mercado colombiano para empresas de custodia de datos.</p></div>
+          </div>
+
+          <div id="doc-cloud" class="doc-section" style="display:none">
+            <h2>Integración Cloud — AWS</h2>
+            <p>El acceso a AWS está restringido exclusivamente a través de la red privada de la empresa. No existe acceso directo desde internet.</p>
+            <h3>Arquitectura de conexión</h3>
+            <ul>
+              <li><strong>VPN Site-to-Site IPSec:</strong> túnel cifrado entre el Edge Gateway local y la VPC de AWS.</li>
+              <li><strong>AWS IAM:</strong> principio de menor privilegio. Cada ingeniero tiene permisos mínimos necesarios para su función.</li>
+              <li><strong>AWS CloudTrail:</strong> auditoría de todas las acciones realizadas en la cuenta.</li>
+              <li><strong>S3 con cifrado en reposo:</strong> almacenamiento de datos con políticas de bucket restrictivas.</li>
+            </ul>
+            <h3>Principios aplicados</h3>
+            <ul>
+              <li>Separación de roles: quien administra la red local no tiene acceso a AWS y viceversa.</li>
+              <li>Acceso denegado por defecto; se otorgan permisos explícitamente.</li>
+              <li>Revisión periódica de políticas IAM para eliminar permisos no utilizados.</li>
+            </ul>
+            <div class="info-box"><p><strong>Referencia:</strong> Cisco Systems (2020) — Enterprise Campus Architecture Design Guide. La conexión híbrida local-cloud sigue el modelo de acceso seguro zero-trust adaptado al contexto de la empresa.</p></div>
+          </div>
+
+          <div id="doc-referencias" class="doc-section" style="display:none">
+            <h2>Referencias Bibliográficas</h2>
+            <p>Base académica y técnica del proyecto (estilo APA):</p>
+            <ul>
+              <li>Cisco Systems. (2020). <em>Enterprise Campus Architecture Design Guide</em>. Cisco Press.</li>
+              <li>Kurose, J. F., & Ross, K. W. (2017). <em>Redes de computadoras: Un enfoque descendente</em> (7a ed.). Pearson Educación.</li>
+              <li>Laudon, K. C., & Laudon, J. P. (2020). <em>Sistemas de información gerencial</em> (16a ed.). Pearson.</li>
+              <li>Stallings, W. (2018). <em>Criptografía y seguridad en redes</em> (7a ed.). Pearson.</li>
+              <li>Tanenbaum, A. S., & Wetherall, D. J. (2012). <em>Redes de computadoras</em> (5a ed.). Pearson.</li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ===================== DATA =====================
+const COLORS = {
+  completado:'#10b981',en_progreso:'#3b82f6',pendiente:'#64748b',bloqueado:'#ef4444'
+};
+const LABELS = {
+  completado:'Completado',en_progreso:'En Progreso',pendiente:'Pendiente',bloqueado:'Bloqueado'
+};
+
+let tasks = [
+  {id:'1',titulo:'Infraestructura de Servidor AWS',descripcion:'Despliegue de Load Balancers y VPC',estado:'completado',progreso:100,analista:'Analista 1',especialidad:'Arq. Cloud'},
+  {id:'2',titulo:'Migración de la DB',descripcion:'Migración a PostgreSQL',estado:'en_progreso',progreso:65,analista:'Analista 2',especialidad:'Database Admin'},
+  {id:'3',titulo:'Implementación RLS',descripcion:'Reglas de acceso por usuario',estado:'en_progreso',progreso:35,analista:'Analista 3',especialidad:'Security Dev'},
+  {id:'4',titulo:'Auditoría a Tiempo Real',descripcion:'Triggers inmutables',estado:'pendiente',progreso:0,analista:'Analista 4',especialidad:'Backend Sr'},
+  {id:'5',titulo:'Autenticación Frontend',descripcion:'Tokens JWT',estado:'bloqueado',progreso:10,analista:'Analista 1',especialidad:'Arq. Cloud'}
+];
+
+const analysts = [
+  {id:'a1',role:'Analista 1',titulo:'Arquitecto de Infraestructura y Redes',bio:'Responsable del diseño e implementación de la topología de red jerárquica, VLANs, firewall perimetral y túnel VPN Site-to-Site hacia AWS.',cert:'CCNA, Network+',herramientas:'Cisco Packet Tracer, draw.io, Wireshark, pfSense',color:'#3b82f6',bg:'rgba(59,130,246,.1)',border:'rgba(59,130,246,.3)'},
+  {id:'a2',role:'Analista 2',titulo:'Administrador de Sistemas y Gestión de Identidades',bio:'Implementación de servidores locales, Active Directory / LDAP, controlador de dominio, DNS y DHCP internos.',cert:'MCSA, Linux+',herramientas:'Windows Server 2022, Active Directory, PowerShell, Ubuntu Server',color:'#10b981',bg:'rgba(16,185,129,.1)',border:'rgba(16,185,129,.3)'},
+  {id:'a3',role:'Analista 3',titulo:'Especialista en Ciberseguridad',bio:'Hardening de red, GPOs, cifrado BitLocker/LUKS, MFA, políticas DLP y auditoría de vulnerabilidades.',cert:'Security+, CEH',herramientas:'BitLocker, LUKS, GPO, Nessus, TryHackMe',color:'#ef4444',bg:'rgba(239,68,68,.1)',border:'rgba(239,68,68,.3)'},
+  {id:'a4',role:'Analista 4',titulo:'Ingeniero de Integración Cloud (AWS)',bio:'Puente entre infraestructura local y AWS: VPN, IAM, S3 y principio de menor privilegio.',cert:'AWS Solutions Architect, AWS Security',herramientas:'AWS IAM, VPC, S3, CloudTrail, Terraform',color:'#f59e0b',bg:'rgba(245,158,11,.1)',border:'rgba(245,158,11,.3)'},
+  {id:'a5',role:'Analista 5',titulo:'Gestor de Proyectos de TI (PM)',bio:'Coordinación integral del proyecto, gestión de TCO, cronogramas, licenciamiento y comunicación con junta directiva.',cert:'PMP, PRINCE2',herramientas:'MS Project, Jira, Confluence, PowerPoint',color:'#8b5cf6',bg:'rgba(139,92,246,.1)',border:'rgba(139,92,246,.3)'}
+];
+
+const profileState = analysts.map(a=>({
+  ...a,nombre:'',email:'',linkedin:'',photo:null,
+  skills: a.cert.split(',').map(s=>s.trim())
+}));
+
+// ===================== NAVIGATION =====================
+function show(sec){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('s-'+sec).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+// ===================== DASHBOARD =====================
+let pieChart = null;
+
+function renderDashboard(){
+  const done = tasks.filter(t=>t.estado==='completado').length;
+  const prog = tasks.filter(t=>t.estado==='en_progreso').length;
+  const blk  = tasks.filter(t=>t.estado==='bloqueado').length;
+  document.getElementById('m-total').textContent = tasks.length;
+  document.getElementById('m-done').textContent = done;
+  document.getElementById('m-progress').textContent = prog;
+  document.getElementById('m-blocked').textContent = blk;
+  document.getElementById('pie-total').textContent = tasks.length;
+
+  // Pie chart
+  const counts = {};
+  tasks.forEach(t=>{ counts[t.estado]=(counts[t.estado]||0)+1; });
+  const labels = Object.keys(counts).map(k=>LABELS[k]);
+  const values = Object.values(counts);
+  const colors = Object.keys(counts).map(k=>COLORS[k]);
+
+  if(pieChart) pieChart.destroy();
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  pieChart = new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data:values,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
+    options:{cutout:'70%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`${c.label}: ${c.raw} tareas`}}},animation:{duration:800}}
+  });
+
+  // Legend
+  const leg = document.getElementById('chart-legend');
+  leg.innerHTML = Object.keys(counts).map(k=>`
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${COLORS[k]}"></div>
+      ${LABELS[k]} (${counts[k]})
+    </div>`).join('');
+
+  // Task cards
+  const list = document.getElementById('tasks-list');
+  list.innerHTML = tasks.map(t=>`
+    <div class="task-card" style="border-left-color:${COLORS[t.estado]}">
+      <div class="task-top">
+        <span class="task-analista">${t.analista} — ${t.especialidad}</span>
+        <span class="task-status" style="background:${COLORS[t.estado]}20;color:${COLORS[t.estado]}">${LABELS[t.estado]}</span>
+      </div>
+      <div class="task-title">${t.titulo}</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:${t.progreso}%;background:${COLORS[t.estado]}"></div></div>
+        <span class="progress-pct">${t.progreso}%</span>
+      </div>
+    </div>`).join('');
+}
+
+// ===================== PM PANEL =====================
+function renderPM(){
+  const list = document.getElementById('pm-list');
+  list.innerHTML = tasks.map((t,i)=>`
+    <div class="pm-card" id="pm-${t.id}">
+      <div class="pm-info">
+        <div class="pm-analista">${t.analista} — ${t.especialidad}</div>
+        <div class="pm-title">${t.titulo}</div>
+      </div>
+      <div class="pm-controls">
+        <div class="pm-range">
+          <input type="range" min="0" max="100" value="${t.progreso}" step="1"
+            oninput="updateProgress('${t.id}',this.value)" style="width:130px;accent-color:${COLORS[t.estado]}">
+          <span id="pct-${t.id}">${t.progreso}%</span>
+        </div>
+        <select class="pm-select" onchange="updateStatus('${t.id}',this.value)">
+          ${['pendiente','en_progreso','bloqueado','completado'].map(s=>
+            `<option value="${s}" ${t.estado===s?'selected':''}>${LABELS[s]}</option>`
+          ).join('')}
+        </select>
+      </div>
+    </div>`).join('');
+}
+
+function updateProgress(id,val){
+  const t = tasks.find(t=>t.id===id);
+  t.progreso = parseInt(val);
+  document.getElementById('pct-'+id).textContent = val+'%';
+  renderDashboard();
+}
+
+function updateStatus(id,val){
+  const t = tasks.find(t=>t.id===id);
+  t.estado = val;
+  if(val==='completado') t.progreso=100;
+  renderPM();
+  renderDashboard();
+}
+
+// ===================== PERFILES =====================
+function renderProfiles(){
+  const tabs = document.getElementById('profiles-tabs');
+  const cards = document.getElementById('profiles-cards');
+  tabs.innerHTML = analysts.map((a,i)=>`
+    <button class="ptab${i===0?' active':''}" onclick="switchProfile(${i})">${a.role}</button>`).join('');
+  cards.innerHTML = profileState.map((s,i)=>`
+    <div class="profile-card${i===0?' active':''}" id="pcard-${i}">
+      <div class="profile-top">
+        <div class="avatar-zone">
+          ${s.photo
+            ?`<img class="avatar-img" src="${s.photo}" alt="foto">`
+            :`<div class="avatar-placeholder" onclick="document.getElementById('pfile-${i}').click()">${s.role.slice(-1)}</div>`}
+          <div class="avatar-btn-group">
+            <button class="avatar-btn" onclick="document.getElementById('pfile-${i}').click()">+ Subir foto</button>
+            ${s.photo?`<button class="avatar-btn del" onclick="removePhoto(${i})">Quitar</button>`:''}
+          </div>
+          <input type="file" id="pfile-${i}" accept="image/*" onchange="uploadPhoto(${i},this)">
+        </div>
+        <div class="profile-fields">
+          <span class="role-badge" style="background:${s.bg};color:${s.color};border-color:${s.border}">${s.role}</span>
+          <div class="field-row">
+            <div class="field-group">
+              <label>Nombre completo</label>
+              <input placeholder="Tu nombre..." value="${s.nombre}" oninput="updateField(${i},'nombre',this.value)">
+            </div>
+            <div class="field-group">
+              <label>Email profesional</label>
+              <input type="email" placeholder="correo@empresa.com" value="${s.email}" oninput="updateField(${i},'email',this.value)">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label>Título / cargo</label>
+              <input value="${s.titulo}" oninput="updateField(${i},'titulo',this.value)">
+            </div>
+            <div class="field-group">
+              <label>LinkedIn URL</label>
+              <input placeholder="linkedin.com/in/tu-perfil" value="${s.linkedin}" oninput="updateField(${i},'linkedin',this.value)">
+            </div>
+          </div>
+        </div>
+      </div>
+      <hr class="profile-divider">
+      <div class="field-row full">
+        <div class="field-group">
+          <label>Bio / extracto profesional</label>
+          <textarea oninput="updateField(${i},'bio',this.value)">${s.bio}</textarea>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="skills-section">
+          <h4>Certificaciones</h4>
+          <div class="badges-wrap" id="badges-${i}">
+            ${s.skills.map((sk,si)=>`
+              <span class="skill-badge">${sk}<span class="skill-del" onclick="removeSk(${i},${si})">×</span></span>`).join('')}
+          </div>
+          <div class="add-skill-row">
+            <input id="sk-in-${i}" placeholder="Nueva certificación..." onkeydown="if(event.key==='Enter')addSk(${i})">
+            <button onclick="addSk(${i})">+</button>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Herramientas y stack</label>
+          <textarea oninput="updateField(${i},'herramientas',this.value)">${s.herramientas}</textarea>
+        </div>
+      </div>
+      <button class="save-profile-btn" onclick="saveProfile(${i})">Guardar perfil</button>
+      <div class="saved-msg" id="saved-${i}"></div>
+    </div>`).join('');
+}
+
+function switchProfile(idx){
+  document.querySelectorAll('.ptab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.profile-card').forEach((c,i)=>c.classList.toggle('active',i===idx));
+}
+
+function updateField(i,field,val){ profileState[i][field]=val; }
+
+function uploadPhoto(i,input){
+  const f=input.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{ profileState[i].photo=e.target.result; renderProfiles(); switchProfile(i); };
+  r.readAsDataURL(f);
+}
+
+function removePhoto(i){ profileState[i].photo=null; renderProfiles(); switchProfile(i); }
+
+function addSk(i){
+  const inp=document.getElementById('sk-in-'+i);
+  const val=inp.value.trim(); if(!val)return;
+  profileState[i].skills.push(val);
+  inp.value='';
+  const wrap=document.getElementById('badges-'+i);
+  const si=profileState[i].skills.length-1;
+  const sp=document.createElement('span');
+  sp.className='skill-badge';
+  sp.innerHTML=`${val}<span class="skill-del" onclick="removeSk(${i},${si})">×</span>`;
+  wrap.appendChild(sp);
+}
+
+function removeSk(i,si){
+  profileState[i].skills.splice(si,1);
+  renderProfiles(); switchProfile(i);
+}
+
+function saveProfile(i){
+  const msg=document.getElementById('saved-'+i);
+  msg.textContent='// perfil guardado correctamente';
+  setTimeout(()=>msg.textContent='',3000);
+}
+
+// ===================== WIKI DOCS =====================
+function showDoc(id){
+  document.querySelectorAll('.doc-section').forEach(s=>s.style.display='none');
+  document.querySelectorAll('.doc-nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('doc-'+id).style.display='block';
+  event.currentTarget.classList.add('active');
+}
+
+// ===================== FINANCIAL CHARTS =====================
+let tcoChart = null, compChart = null;
+
+function renderFinCharts(){
+  const tcoData = [
+    { label: 'Red y seguridad',  val: 19.5, color: '#3b82f6' },
+    { label: 'Servidores',       val: 18.4, color: '#10b981' },
+    { label: 'Gestión proy.',    val: 19.5, color: '#8b5cf6' },
+    { label: 'Licenciamiento',   val: 6.8,  color: '#f59e0b' },
+    { label: 'Seg. endpoints',   val: 4.7,  color: '#ef4444' },
+  ];
+  if(tcoChart) tcoChart.destroy();
+  tcoChart = new Chart(document.getElementById('tcoChart').getContext('2d'),{
+    type:'doughnut',
+    data:{ labels: tcoData.map(d=>d.label), datasets:[{ data:tcoData.map(d=>d.val), backgroundColor:tcoData.map(d=>d.color), borderWidth:0, hoverOffset:5 }] },
+    options:{ cutout:'68%', plugins:{ legend:{display:false}, tooltip:{callbacks:{label:c=>`${c.label}: $${c.raw}M`}} }, animation:{duration:900} }
+  });
+  document.getElementById('tco-legend').innerHTML = tcoData.map(d=>`
+    <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2)">
+      <div style="width:7px;height:7px;border-radius:50%;background:${d.color};flex-shrink:0"></div>${d.label}
+    </div>`).join('');
+
+  if(compChart) compChart.destroy();
+  compChart = new Chart(document.getElementById('compChart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:['Inversión inicial','TCO 3 años','TCO + incidente'],
+      datasets:[
+        { label:'Red plana P2P',      data:[3.5, 43.5, 213.5], backgroundColor:'rgba(239,68,68,.65)',  borderRadius:6, borderSkipped:false },
+        { label:'Cliente-Servidor',   data:[47.5, 90.7, 90.7],  backgroundColor:'rgba(16,185,129,.65)', borderRadius:6, borderSkipped:false }
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:true,
+      scales:{
+        x:{ ticks:{color:'#64748b',font:{size:10}}, grid:{color:'rgba(255,255,255,.04)'} },
+        y:{ ticks:{color:'#64748b',font:{size:10},callback:v=>`$${v}M`}, grid:{color:'rgba(255,255,255,.06)'} }
+      },
+      plugins:{
+        legend:{ labels:{color:'#94a3b8',font:{size:11},boxWidth:10,padding:12} },
+        tooltip:{ callbacks:{label:c=>`${c.dataset.label}: $${c.raw}M COP`} }
+      }
+    }
+  });
+}
+
+// ===================== INIT =====================
+renderDashboard();
+renderPM();
+renderProfiles();
+renderFinCharts();
+</script>
+</body>
+</html>
