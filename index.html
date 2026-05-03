@@ -464,6 +464,7 @@ body.light .section { background: var(--bg); }
         <div class="doc-nav">
           <button class="doc-nav-item active" onclick="showDoc('arquitectura')">Arquitectura</button>
           <button class="doc-nav-item" onclick="showDoc('roles')">Roles</button>
+          <button class="doc-nav-item" onclick="showDoc('anexo-analista2')">Directorio Activo / Gestion de Identidades</button>
           <button class="doc-nav-item" onclick="showDoc('seguridad')">Seguridad</button>
           <button class="doc-nav-item" onclick="showDoc('cloud')">Cloud AWS</button>
           <button class="doc-nav-item" onclick="showDoc('referencias')">Referencias</button>
@@ -547,6 +548,49 @@ body.light .section { background: var(--bg); }
               <li>Revisión periódica de políticas IAM para eliminar permisos no utilizados.</li>
             </ul>
             <div class="info-box"><p><strong>Referencia:</strong> Cisco Systems (2020) — Enterprise Campus Architecture Design Guide. La conexión híbrida local-cloud sigue el modelo de acceso seguro zero-trust adaptado al contexto de la empresa.</p></div>
+          </div>
+
+          <div id="doc-anexo-analista2" class="doc-section" style="display:none">
+            <h2>📝 Anexo Wiki: Profundización Analista 2</h2>
+            <p><strong>Rol:</strong> Administrador de Sistemas y Gestión de Identidades</p>
+            <p>Este documento detalla las responsabilidades extendidas del Analista 2 para garantizar que el modelo Cliente-Servidor no solo exista, sino que sea <strong>resiliente, escalable y coherente</strong> con la exigencia de "máxima confidencialidad" del proyecto.</p>
+
+            <h3>1. Ubicación en la Estructura del Documento</h3>
+            <div class="info-box"><p>Este bloque de contenido debe integrarse en la sección <strong>"Propuesta de Arquitectura de Red sugerida"</strong>, específicamente ampliando el punto sobre el <strong>Servidor Local (Controlador de Dominio)</strong> y el perfil del Analista 2.</p></div>
+
+            <h3>2. Contenido Técnico Detallado</h3>
+
+            <h3>A. Alta Disponibilidad de Identidad (Redundancia)</h3>
+            <p>Para mitigar el riesgo de <strong>Punto Único de Fallo (SPOF)</strong>, el Analista 2 no desplegará un servidor aislado, sino un esquema de redundancia:</p>
+            <ul>
+              <li><strong>Primary &amp; Secondary DC:</strong> Implementación de dos controladores de dominio sincronizados. Si el servidor principal falla, el secundario asume la autenticación de los ingenieros de forma transparente.</li>
+              <li><strong>FSMO Roles:</strong> Distribución estratégica de los roles maestros de operación para asegurar la integridad de la base de datos de objetos (usuarios/equipos).</li>
+            </ul>
+
+            <h3>B. Gestión del Ciclo de Vida de Identidades (Identity Management)</h3>
+            <p>Para asegurar coherencia operativa, se establecen tres estados obligatorios:</p>
+            <ul>
+              <li><strong>Onboarding (Joiners):</strong> Creación de cuentas basada en plantillas de menor privilegio.</li>
+              <li><strong>Transiciones (Movers):</strong> Auditoría inmediata de permisos al cambiar de rol (ej. de administrativo a ingeniero).</li>
+              <li><strong>Offboarding (Leavers):</strong> Protocolo de Revocación Inmediata. Al desactivar la cuenta en el servidor local, se pierde automáticamente el acceso a la red y a la VPN de AWS.</li>
+            </ul>
+
+            <h3>C. Estrategia de Backup y Disaster Recovery (DRP)</h3>
+            <p>El Analista 2 es el custodio de la <strong>"identidad corporativa"</strong>. Su tarea incluye:</p>
+            <ul>
+              <li><strong>System State Backups:</strong> Copias diarias de la base de datos de Active Directory/LDAP.</li>
+              <li><strong>Almacenamiento Híbrido:</strong> Copia local (VLAN 30) para recuperación rápida y copia cifrada en AWS S3 (coordinado con Analista 4) para recuperación ante desastres físicos en la sede.</li>
+            </ul>
+
+            <h3>D. Servicios de Red Críticos y Monitoreo</h3>
+            <p>Más allá de instalar, el Analista 2 garantiza la salud del sistema:</p>
+            <ul>
+              <li><strong>DNS Autoritativo:</strong> Resolución de nombres interna para que las estaciones de trabajo encuentren los recursos de red sin salir a internet.</li>
+              <li><strong>DHCP Reservado:</strong> Asignación de IPs dinámicas pero controladas por dirección MAC para evitar que dispositivos no autorizados obtengan red.</li>
+              <li><strong>Agentes de Monitoreo:</strong> Implementación de alertas tempranas sobre uso de CPU, RAM y almacenamiento en los servidores para evitar cuellos de botella.</li>
+            </ul>
+
+            <div class="ok-box"><p>Este anexo refuerza el principio de <strong>continuidad operativa</strong>: la identidad corporativa debe ser tan resiliente como la propia red, garantizando que ninguna falla individual comprometa el acceso seguro a los recursos críticos.</p></div>
           </div>
 
           <div id="doc-referencias" class="doc-section" style="display:none">
